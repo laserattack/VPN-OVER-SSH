@@ -145,4 +145,47 @@ Handcrafted with Passion by **Ebrahim Shafiei (EbraSha)**
 
 ## 📜 License
 
-This project is licensed under the GPLv2 or later License.
+
+This project is licensed under the **GNU AGPLv3** with additional terms
+as permitted by Section 7 of the AGPLv3. See [LICENSE](./LICENSE) for the
+complete text including additional terms.
+
+### Summary of Your Rights and Obligations
+
+- ✅ You **may** use, study, modify, and redistribute this software under
+  the terms of AGPLv3.
+- ✅ You **may** create derivative works, provided you comply with the
+  attribution and renaming requirements below.
+- ⚠️ **Network use** triggers source disclosure obligations (AGPLv3 §13).
+  If you run a modified version of this software as a network service,
+  you must offer the modified source code to its users.
+- ⚠️ The names **"Abdal 4iProto Android"**, **"Abdal"**, **"EbraSha"**, **"Abdal Security Group"**, **"Nahaanbin CyberSecurity Company"** and associated logos are **trademarks** of
+  Ebrahim Shafiei (EbraSha) and are **NOT** covered by the AGPLv3 license.
+- ⚠️ Forks and modified versions **MUST be renamed** to a name that is
+  not confusingly similar to the Project Brand, and may NOT reuse the
+  original branding, logos, or visual identity.
+- ⚠️ **All author attributions, copyright notices, "About" screens,
+  credit lines, and identifying information MUST be preserved** in any
+  modified version. Removal or obfuscation is a material violation of
+  the License.
+- ⚠️ Modified versions must clearly indicate they are modified and must
+  not be represented as the official version.
+
+For details, see the **Additional Terms** section in the [LICENSE](./LICENSE) file.
+
+### Commercial / Trademark Licensing
+
+For commercial licensing, trademark licensing, or permissions beyond
+the scope of AGPLv3, please contact:
+
+- **Author:** Ebrahim Shafiei (EbraSha)
+- **Team:** Abdal Security Group
+- **Company:** Nahaanbin CyberSecurity Company
+- **Email:** Prof.Shafiei@Gmail.com
+- **Repository:** https://github.com/ebrasha/abdal-4iproto-client-android
+
+### Reporting License Violations
+
+If you discover a fork, distribution, or commercial use that violates
+these terms (such as removed attribution, reused branding, or unauthorized
+trademark use), please report it via the contact above.
