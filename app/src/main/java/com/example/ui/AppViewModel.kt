@@ -27,7 +27,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
 import com.example.data.ServerEntity
 import com.example.data.ServerRepository
-import com.example.util.SoundManager
 import com.example.vpn.AbdalVpnService
 import com.example.vpn.VpnState
 import com.example.vpn.VpnStateNotifier
@@ -52,29 +51,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _killSwitchEnabled = kotlinx.coroutines.flow.MutableStateFlow(prefs.getBoolean("kill_switch", true))
     val killSwitchEnabled: StateFlow<Boolean> = _killSwitchEnabled
-    fun setKillSwitch(enabled: Boolean) { 
+    fun setKillSwitch(enabled: Boolean) {
         _killSwitchEnabled.value = enabled
         prefs.edit().putBoolean("kill_switch", enabled).apply()
-        SoundManager.playSwitch()
     }
 
     private val _fakeIpEnabled = kotlinx.coroutines.flow.MutableStateFlow(prefs.getBoolean("fake_ip", true))
     val fakeIpEnabled: StateFlow<Boolean> = _fakeIpEnabled
-    fun setFakeIp(enabled: Boolean) { 
+    fun setFakeIp(enabled: Boolean) {
         _fakeIpEnabled.value = enabled
         prefs.edit().putBoolean("fake_ip", enabled).apply()
-        SoundManager.playSwitch()
     }
 
     private val _whitelistIps = kotlinx.coroutines.flow.MutableStateFlow(prefs.getString("whitelist_ips", "") ?: "")
     val whitelistIps: StateFlow<String> = _whitelistIps
-    fun setWhitelistIps(ips: String) { 
+    fun setWhitelistIps(ips: String) {
         _whitelistIps.value = ips
         prefs.edit().putString("whitelist_ips", ips).apply()
     }
 
     init {
-        SoundManager.init(application)
         val serverDao = AppDatabase.getDatabase(application).serverDao()
         repository = ServerRepository(serverDao)
         allServers = repository.allServers.stateIn(
@@ -112,13 +108,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleVpn(context: Context, server: ServerEntity) {
         if (vpnState.value == VpnState.CONNECTED || vpnState.value == VpnState.CONNECTING) {
-            SoundManager.playDisconnect()
             val intent = Intent(context, AbdalVpnService::class.java).apply {
                 action = AbdalVpnService.ACTION_DISCONNECT
             }
             context.startService(intent)
         } else {
-            SoundManager.playStart()
             val intent = Intent(context, AbdalVpnService::class.java).apply {
                 action = AbdalVpnService.ACTION_CONNECT
                 putExtra(AbdalVpnService.EXTRA_IP, server.ip)

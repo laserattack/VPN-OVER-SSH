@@ -33,7 +33,6 @@ import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
 import com.example.R
-import com.example.util.SoundManager
 import com.example.util.TunnelLogger
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
@@ -141,7 +140,6 @@ class AbdalVpnService : VpnService() {
 
     override fun onCreate() {
         super.onCreate()
-        SoundManager.init(applicationContext)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -260,7 +258,6 @@ class AbdalVpnService : VpnService() {
                 startTunnelEngine(tunFd, socksPort)
 
                 VpnStateNotifier.updateState(VpnState.CONNECTED)
-                SoundManager.playConnect()
                 reconnectAttempts = 0
                 tunnelEverEstablished = true
                 startSessionMonitor(sshSession)
@@ -271,8 +268,6 @@ class AbdalVpnService : VpnService() {
                 if (userRequestedDisconnect.get()) {
                     return@launch
                 }
-                // Plays once per failure cycle (de-duplicated inside SoundManager) and re-arms on reconnect.
-                SoundManager.playError()
                 val message = if (isReconnect) "Reconnect failed" else "Connection failed"
                 TunnelLogger.error(TAG, message, e)
                 stopTunnelEngineAndSession()
@@ -310,7 +305,6 @@ class AbdalVpnService : VpnService() {
         }
         val config = activeConfig ?: return
         // An established tunnel dropped unexpectedly; signal it once (re-armed by the next successful connect).
-        SoundManager.playError()
         scheduleReconnect(config, failure)
     }
 
