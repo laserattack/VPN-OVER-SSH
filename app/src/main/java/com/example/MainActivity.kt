@@ -5,6 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,24 +40,71 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    NavHost(navController = navController, startDestination = "home") {
+                    NavHost(
+                        navController = navController,
+                        startDestination = "home",
+                        enterTransition = { EnterTransition.None },
+                        exitTransition = { ExitTransition.None },
+                        popEnterTransition = { EnterTransition.None },
+                        popExitTransition = { ExitTransition.None }
+                    ) {
                         composable("home") {
                             HomeScreen(
                                 viewModel = viewModel,
-                                onServerManagementClick = { navController.navigate("server_management") },
-                                onAboutClick = { navController.navigate("about") },
-                                onLogClick = { navController.navigate("logs") },
-                                onAdvancedSettingsClick = { navController.navigate("advanced_settings") },
-                                onPerAppSplitTunClick = { navController.navigate("per_app_split_tun") },
-                                onUdpTunnelClick = { navController.navigate("udp_tunnel") }
+                                onServerManagementClick = {
+                                    navController.navigate("server_management") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onAboutClick = {
+                                    navController.navigate("about") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onLogClick = {
+                                    navController.navigate("logs") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onAdvancedSettingsClick = {
+                                    navController.navigate("advanced_settings") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onPerAppSplitTunClick = {
+                                    navController.navigate("per_app_split_tun") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onUdpTunnelClick = {
+                                    navController.navigate("udp_tunnel") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
                             )
                         }
                         composable("server_management") {
                             ServerManagementScreen(
                                 viewModel = viewModel,
                                 onBackClick = { navController.popBackStack() },
-                                onAddServerClick = { navController.navigate("add_server") },
-                                onEditServerClick = { serverId -> navController.navigate("edit_server/$serverId") }
+                                onAddServerClick = {
+                                    navController.navigate("add_server") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onEditServerClick = { serverId ->
+                                    navController.navigate("edit_server/$serverId") {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
                             )
                         }
                         composable("add_server") {

@@ -71,27 +71,27 @@ fun LogScreen(onBackClick: () -> Unit) {
         },
         bottomBar = {
             BottomAppBar {
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(
-                    onClick = {
-                        clipboardManager.setText(AnnotatedString(TunnelLogger.dump()))
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.log_copied),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(stringResource(R.string.copy_log))
+                    TextButton(
+                        onClick = {
+                            clipboardManager.setText(AnnotatedString(TunnelLogger.dump()))
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.log_copied),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    ) {
+                        Text(stringResource(R.string.copy_log))
+                    }
+                    Button(onClick = onBackClick) {
+                        Text(stringResource(R.string.exit))
+                    }
                 }
-                TextButton(onClick = { TunnelLogger.clear() }) {
-                    Text(stringResource(R.string.clear_log))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(onClick = onBackClick) {
-                    Text(stringResource(R.string.exit))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
             }
         }
     ) { padding ->
