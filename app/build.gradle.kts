@@ -27,7 +27,7 @@ android {
       storeFile = file("${rootDir}/my-upload-key.jks")
       storePassword = ""
       keyAlias = "my-key-alias"
-      keyPassword = "" 
+      keyPassword = ""
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -48,7 +48,6 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      signingConfig = signingConfigs.getByName("debugConfig")
     }
   }
   compileOptions {
@@ -105,7 +104,7 @@ dependencies {
   implementation(libs.androidx.room.runtime)
   // implementation(libs.coil.compose)
   implementation(libs.converter.moshi)
-  
+
   implementation(libs.jsch)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
