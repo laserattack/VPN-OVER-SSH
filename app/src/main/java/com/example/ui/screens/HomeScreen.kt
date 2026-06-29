@@ -94,10 +94,10 @@ fun HomeScreen(
 
     val buttonBgColor by animateColorAsState(
         targetValue = when (vpnState) {
-            VpnState.DISCONNECTED -> Color.DarkGray
-            VpnState.CONNECTING -> Color(0xFFD4A373)
-            VpnState.CONNECTED -> Color(0xFF4CAF50)
-            VpnState.ERROR -> Color(0xFFF44336)
+            VpnState.DISCONNECTED -> Color(0xFFFF8A75)
+            VpnState.CONNECTING -> Color(0xFFFF8A75)
+            VpnState.CONNECTED -> Color(0xFFFF6B4A)
+            VpnState.ERROR -> Color(0xFFFF6B4A)
         },
         animationSpec = tween(500),
         label = "connectButtonColor"
@@ -304,7 +304,7 @@ fun HomeScreen(
                                 val currentRadius = (size.width / 2f) + (60.dp.toPx() * haloAnim)
                                 val alpha = (1f - haloAnim) * 0.4f
                                 drawCircle(
-                                    color = Color(0xFF4CAF50).copy(alpha = alpha),
+                                    color = Color(0xFFFF6B4A).copy(alpha = alpha),
                                     radius = currentRadius
                                 )
                             }
