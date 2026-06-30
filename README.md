@@ -15,7 +15,7 @@ SSH-based VPN for Android. Device-wide tunneling, no root required
 ## Build
 
 ```
-./gradlew clean assemble --no-daemon
+make
 ```
 
 ## License
