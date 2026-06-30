@@ -8,8 +8,7 @@
  * Created On : 2026-06-03 15:59:00
  * Description : Local SOCKS5 server that bridges incoming connections to SSH channels (JSch), providing
  *               the dynamic forwarding that JSch itself does not implement. TCP is fully proxied via
- *               direct-tcpip; UDP ASSOCIATE tunnels DNS (port 53) and forwards all other UDP traffic
- *               transparently over per-destination direct-udpip channels (see UdpNat).
+ *               direct-tcpip; UDP ASSOCIATE only tunnels DNS (port 53) over TCP.
  * -------------------------------------------------------------------
  *
  * "Coding is an engaging and beloved hobby for me. I passionately and insatiably pursue knowledge in cybersecurity and programming."
@@ -33,7 +32,6 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
-import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -44,7 +42,6 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class SshSocksProxy(
     private val session: Session,
-    private val transparentUdp: Boolean = false,
     private val onSessionFailure: (Throwable) -> Unit = {}
 ) {
 
@@ -54,10 +51,6 @@ class SshSocksProxy(
     private val sessionFailureReported = AtomicBoolean(false)
     private val lastFailureLogAt = AtomicLong(0)
     private val suppressedFailureLogs = AtomicInteger(0)
-
-    // Active transparent-UDP NAT instances (one per UDP ASSOCIATE association), tracked so they can be
-    // torn down when the proxy stops.
-    private val activeNats = CopyOnWriteArraySet<UdpNat>()
 
     /** The actual port the proxy is listening on (assigned by the OS). */
     var listenPort: Int = -1
@@ -88,13 +81,6 @@ class SshSocksProxy(
      */
     fun stop() {
         running.set(false)
-        activeNats.forEach { nat ->
-            try {
-                nat.close()
-            } catch (_: Exception) {
-            }
-        }
-        activeNats.clear()
         try {
             serverSocket?.close()
         } catch (e: IOException) {
@@ -240,7 +226,7 @@ class SshSocksProxy(
 
     /**
      * Minimal UDP ASSOCIATE support, used only to resolve DNS by tunneling queries over TCP (RFC 7766).
-     * Non-DNS UDP datagrams are dropped, which is an accepted limitation of SSH based tunnels.
+     * Non-DNS UDP datagrams are dropped.
      */
     private fun handleUdpAssociate(client: Socket, clientOut: OutputStream) {
         val relay = DatagramSocket(InetSocketAddress(LOOPBACK, 0))
@@ -258,12 +244,7 @@ class SshSocksProxy(
         clientOut.write(bnd)
         clientOut.flush()
 
-        // When transparent UDP is enabled, one NAT per association carries all non-DNS UDP flows over
-        // direct-udpip channels. Otherwise the NAT is absent and non-DNS UDP keeps the legacy drop behavior.
-        val nat = if (transparentUdp) UdpNat(session, relay) { failure -> reportSessionFailure(failure) } else null
-        nat?.let { activeNats.add(it) }
-
-        val relayThread = Thread({ udpRelayLoop(relay, nat) }, "ssh-socks-udp")
+        val relayThread = Thread({ udpRelayLoop(relay) }, "ssh-socks-udp")
         relayThread.isDaemon = true
         relayThread.start()
 
@@ -276,10 +257,6 @@ class SshSocksProxy(
             }
         } catch (_: IOException) {
         } finally {
-            nat?.let {
-                activeNats.remove(it)
-                it.close()
-            }
             relay.close()
             try {
                 client.close()
@@ -288,14 +265,13 @@ class SshSocksProxy(
         }
     }
 
-    private fun udpRelayLoop(relay: DatagramSocket, nat: UdpNat?) {
+    private fun udpRelayLoop(relay: DatagramSocket) {
         val buffer = ByteArray(UDP_BUFFER_SIZE)
         while (!relay.isClosed) {
             try {
                 val packet = DatagramPacket(buffer, buffer.size)
                 relay.receive(packet)
-                handleUdpDatagram(relay, packet, nat)
-                // nat may be null when transparent UDP is disabled (DNS-only legacy mode).
+                handleUdpDatagram(relay, packet)
             } catch (e: IOException) {
                 if (!relay.isClosed) {
                     TunnelLogger.warn(TAG, "UDP relay error", e)
@@ -305,7 +281,7 @@ class SshSocksProxy(
         }
     }
 
-    private fun handleUdpDatagram(relay: DatagramSocket, packet: DatagramPacket, nat: UdpNat?) {
+    private fun handleUdpDatagram(relay: DatagramSocket, packet: DatagramPacket) {
         val data = packet.data
         val length = packet.length
         if (length < 10) {
@@ -342,11 +318,8 @@ class SshSocksProxy(
         val header = data.copyOfRange(0, index)
         val payload = data.copyOfRange(index, length)
 
+        // Only DNS (port 53) is processed; all other UDP traffic is silently dropped.
         if (destPort != DNS_PORT) {
-            if (nat == null) {
-                return
-            }
-            nat.forward(packet.socketAddress, header, destHost, destHost, destPort, payload)
             return
         }
 
