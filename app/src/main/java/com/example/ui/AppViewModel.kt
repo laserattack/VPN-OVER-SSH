@@ -32,17 +32,27 @@ import com.example.vpn.VpnState
 import com.example.vpn.VpnStateNotifier
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        private const val PREF_SELECTED_SERVER_ID = "selected_server_id"
+    }
+
     private val repository: ServerRepository
-    val allServers: StateFlow<List<ServerEntity>>
+
+    private val _allServers = MutableStateFlow<List<ServerEntity>>(emptyList())
+    val allServers: StateFlow<List<ServerEntity>> = _allServers
 
     private val _selectedServer = kotlinx.coroutines.flow.MutableStateFlow<ServerEntity?>(null)
     val selectedServer: StateFlow<ServerEntity?> = _selectedServer
-    fun selectServer(server: ServerEntity?) { _selectedServer.value = server }
+    fun selectServer(server: ServerEntity?) {
+        _selectedServer.value = server
+        prefs.edit().putInt(PREF_SELECTED_SERVER_ID, server?.id ?: -1).apply()
+    }
 
     val vpnState: StateFlow<VpnState> = VpnStateNotifier.vpnState
     val errorMessage: StateFlow<String?> = VpnStateNotifier.errorMessage
@@ -73,11 +83,30 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val serverDao = AppDatabase.getDatabase(application).serverDao()
         repository = ServerRepository(serverDao)
-        allServers = repository.allServers.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+
+        viewModelScope.launch {
+            repository.allServers.collect { servers ->
+                _allServers.value = servers
+
+                if (_selectedServer.value == null && servers.isNotEmpty()) {
+                    val savedId = prefs.getInt(PREF_SELECTED_SERVER_ID, -1)
+                    if (savedId != -1) {
+                        val saved = servers.find { it.id == savedId }
+                        if (saved != null) {
+                            _selectedServer.value = saved
+                        } else {
+                            _selectedServer.value = servers.first()
+                        }
+                    } else {
+                        _selectedServer.value = servers.first()
+                    }
+                }
+            }
+        }
+    }
+
+    fun getSavedServerId(): Int {
+        return prefs.getInt(PREF_SELECTED_SERVER_ID, -1)
     }
 
     fun addServer(name: String, ip: String, port: Int, user: String, pass: String) {
@@ -89,12 +118,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun updateServer(server: ServerEntity) {
         viewModelScope.launch {
             repository.update(server)
+            if (_selectedServer.value?.id == server.id) {
+                _selectedServer.value = server
+            }
         }
     }
 
     fun deleteServer(server: ServerEntity) {
         viewModelScope.launch {
             repository.delete(server)
+            if (_selectedServer.value?.id == server.id) {
+                _selectedServer.value = null
+                prefs.edit().putInt(PREF_SELECTED_SERVER_ID, -1).apply()
+            }
         }
     }
 

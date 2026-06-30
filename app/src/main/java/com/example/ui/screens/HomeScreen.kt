@@ -84,11 +84,17 @@ fun HomeScreen(
 
     val selectedServer by viewModel.selectedServer.collectAsStateWithLifecycle()
 
-    LaunchedEffect(servers) {
-        if (selectedServer == null && servers.isNotEmpty()) {
-            viewModel.selectServer(servers.first())
-        } else if (servers.isEmpty()) {
-            viewModel.selectServer(null)
+    var showVpnActiveDialog by remember { mutableStateOf(false) }
+    var pendingServerSwitch by remember { mutableStateOf<ServerEntity?>(null) }
+
+    fun isVpnActive(): Boolean = vpnState == VpnState.CONNECTED || vpnState == VpnState.CONNECTING
+
+    LaunchedEffect(vpnState) {
+        if (vpnState == VpnState.DISCONNECTED && pendingServerSwitch != null) {
+            val server = pendingServerSwitch!!
+            pendingServerSwitch = null
+            viewModel.selectServer(server)
+            viewModel.toggleVpn(context, server)
         }
     }
 
@@ -143,8 +149,12 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.server_management)) },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onServerManagementClick()
+                        if (isVpnActive()) {
+                            showVpnActiveDialog = true
+                        } else {
+                            scope.launch { drawerState.close() }
+                            onServerManagementClick()
+                        }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
@@ -159,7 +169,13 @@ fun HomeScreen(
                         Switch(checked = killSwitchEnabled, onCheckedChange = null)
                     },
                     selected = false,
-                    onClick = { viewModel.setKillSwitch(!killSwitchEnabled) },
+                    onClick = {
+                        if (isVpnActive()) {
+                            showVpnActiveDialog = true
+                        } else {
+                            viewModel.setKillSwitch(!killSwitchEnabled)
+                        }
+                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(
@@ -173,7 +189,13 @@ fun HomeScreen(
                         Switch(checked = fakeIpEnabled, onCheckedChange = null)
                     },
                     selected = false,
-                    onClick = { viewModel.setFakeIp(!fakeIpEnabled) },
+                    onClick = {
+                        if (isVpnActive()) {
+                            showVpnActiveDialog = true
+                        } else {
+                            viewModel.setFakeIp(!fakeIpEnabled)
+                        }
+                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(
@@ -181,8 +203,12 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.advanced_settings)) },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onAdvancedSettingsClick()
+                        if (isVpnActive()) {
+                            showVpnActiveDialog = true
+                        } else {
+                            scope.launch { drawerState.close() }
+                            onAdvancedSettingsClick()
+                        }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
@@ -191,8 +217,12 @@ fun HomeScreen(
                     label = { Text("Per-App Split Tun") },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onPerAppSplitTunClick()
+                        if (isVpnActive()) {
+                            showVpnActiveDialog = true
+                        } else {
+                            scope.launch { drawerState.close() }
+                            onPerAppSplitTunClick()
+                        }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
@@ -201,8 +231,12 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.udp_tunnel)) },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onUdpTunnelClick()
+                        if (isVpnActive()) {
+                            showVpnActiveDialog = true
+                        } else {
+                            scope.launch { drawerState.close() }
+                            onUdpTunnelClick()
+                        }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
@@ -224,28 +258,28 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Based on Abdal 4iProto",
+                        text = stringResource(R.string.attribution_based_on),
                         fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "by Ebrahim Shafiei (EbraSha)",
+                        text = stringResource(R.string.attribution_by),
                         fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "License: GNU AGPLv3",
+                        text = stringResource(R.string.attribution_license),
                         fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "github.com/ebrasha/abdal-4iproto-client-android",
+                        text = stringResource(R.string.attribution_url),
                         fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                         modifier = Modifier.clickable {
                             val intent = android.content.Intent(
                                 android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse("https://github.com/ebrasha/abdal-4iproto-client-android")
+                                android.net.Uri.parse(context.getString(R.string.attribution_url))
                             )
                             context.startActivity(intent)
                         }
@@ -278,10 +312,18 @@ fun HomeScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    FloatingActionButton(onClick = onServerManagementClick) {
+                    FloatingActionButton(
+                        onClick = {
+                            if (isVpnActive()) {
+                                showVpnActiveDialog = true
+                            } else {
+                                onServerManagementClick()
+                            }
+                        }
+                    ) {
                         Icon(
                             if (servers.isEmpty()) Icons.Default.Add else Icons.Default.Edit,
-                                                                          contentDescription = if (servers.isEmpty()) "Add server" else "Edit servers"
+                            contentDescription = if (servers.isEmpty()) "Add server" else "Edit servers"
                         )
                     }
                 }
@@ -314,19 +356,19 @@ fun HomeScreen(
                         .clickable {
                             when {
                                 selectedServer == null -> {
-                                                              viewModel.reportNoServerSelected()
-                                                          }
-                                                          vpnState == VpnState.CONNECTED || vpnState == VpnState.CONNECTING -> {
-                                                                                                                                   viewModel.toggleVpn(context, selectedServer!!)
-                                                                                                                               }
+                                    viewModel.reportNoServerSelected()
+                                }
+                                vpnState == VpnState.CONNECTED || vpnState == VpnState.CONNECTING -> {
+                                    viewModel.toggleVpn(context, selectedServer!!)
+                                }
                                 else -> {
-                                            val intent = VpnService.prepare(context)
-                                            if (intent != null) {
-                                                vpnLauncher.launch(intent)
-                                            } else {
-                                                viewModel.toggleVpn(context, selectedServer!!)
-                                            }
-                                        }
+                                    val intent = VpnService.prepare(context)
+                                    if (intent != null) {
+                                        vpnLauncher.launch(intent)
+                                    } else {
+                                        viewModel.toggleVpn(context, selectedServer!!)
+                                    }
+                                }
                             }
                         },
                     contentAlignment = Alignment.Center
@@ -392,13 +434,37 @@ fun HomeScreen(
                             ServerItem(
                                 server = server,
                                 isSelected = server.id == selectedServer?.id,
-                                onClick = { viewModel.selectServer(server) }
+                                onClick = {
+                                    if (server.id == selectedServer?.id) return@ServerItem
+
+                                    if (isVpnActive()) {
+                                        pendingServerSwitch = server
+                                        selectedServer?.let { oldServer ->
+                                            viewModel.toggleVpn(context, oldServer)
+                                        }
+                                    } else {
+                                        viewModel.selectServer(server)
+                                    }
+                                }
                             )
                         }
                     }
                 }
             }
         }
+    }
+
+    if (showVpnActiveDialog) {
+        AlertDialog(
+            onDismissRequest = { showVpnActiveDialog = false },
+            title = { Text(stringResource(R.string.vpn_active_title)) },
+            text = { Text(stringResource(R.string.vpn_active_message)) },
+            confirmButton = {
+                TextButton(onClick = { showVpnActiveDialog = false }) {
+                    Text(stringResource(R.string.ok))
+                }
+            }
+        )
     }
 }
 

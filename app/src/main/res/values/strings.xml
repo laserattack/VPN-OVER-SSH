@@ -6,6 +6,7 @@
     <string name="delete_server_desc">Are you sure you want to delete this server?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="ok">Ok</string>
     <string name="add_server">Add Server</string>
     <string name="save_server">Save Server</string>
     <string name="server_ip">Server IP or hostname</string>
@@ -53,4 +54,10 @@
     <string name="local_udp_port">Local UDP Port (0 - 65535)</string>
     <string name="target_host">Target Host (IPv4)</string>
     <string name="target_port">Target Port (1 - 65535)</string>
+    <string name="vpn_active_title">VPN Active</string>
+    <string name="vpn_active_message">Please disconnect VPN first to change settings</string>
+    <string name="attribution_based_on">Based on Abdal 4iProto</string>
+    <string name="attribution_by">by Ebrahim Shafiei (EbraSha)</string>
+    <string name="attribution_license">License: GNU AGPLv3</string>
+    <string name="attribution_url">https://github.com/ebrasha/abdal-4iproto-client-android</string>
 </resources>
